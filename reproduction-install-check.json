@@ -1,0 +1,18 @@
+{
+  "bfcl_cli": {
+    "returncode": 0,
+    "passed": true
+  },
+  "tau2_data": {
+    "returncode": 0,
+    "passed": true
+  },
+  "bfcl_runner": {
+    "returncode": 0,
+    "passed": true
+  },
+  "tau2_runner": {
+    "returncode": 0,
+    "passed": true
+  }
+}

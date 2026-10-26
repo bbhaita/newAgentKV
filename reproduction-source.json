@@ -1,0 +1,18 @@
+{
+  "source": "https://github.com/LiuTaowen-Tony/agentkv",
+  "commit": "b5280b7c42bd90962712c19f8e0047c89ca40d6d",
+  "submodules": {
+    "engine": {
+      "commit": "254c57bc84e4a7895159ba1062bd46c83626f511",
+      "url": "https://github.com/LiuTaowen-Tony/kv-management-minisgl.git"
+    },
+    "gorilla": {
+      "commit": "c1c222ed87e1cf2ad721e332bdb8ae977ba9cc31",
+      "url": "https://github.com/LiuTaowen-Tony/kv-management-bfcl.git"
+    },
+    "tau2-bench": {
+      "commit": "b761585177de694ad6ac83eff70f1f0cf7af4600",
+      "url": "https://github.com/LiuTaowen-Tony/kv-management-tau2.git"
+    }
+  }
+}

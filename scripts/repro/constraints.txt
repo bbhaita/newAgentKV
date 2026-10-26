@@ -1,0 +1,6 @@
+# Versions selected for CUDA 12.8 / Python 3.12 and the upstream engine API.
+torch==2.9.1
+transformers==4.57.3
+flashinfer-python==0.5.3
+sgl-kernel==0.3.17.post1
+numpy==1.26.4
