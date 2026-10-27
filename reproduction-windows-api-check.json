@@ -1,0 +1,5 @@
+{
+  "windows_localhost_reachable": true,
+  "url": "http://127.0.0.1:30000/v1",
+  "model": "/mnt/agentkv-newAgentKV/models/Qwen3-0.6B"
+}

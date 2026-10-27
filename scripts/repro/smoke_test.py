@@ -71,8 +71,21 @@ def main():
                 "temperature": 0, "max_tokens": 48,
             }, timeout=300)
             result["response"] = response
-            if not response.get("choices") or response.get("usage", {}).get("completion_tokens", 0) <= 0:
-                raise AssertionError(f"No generated tokens: {response}")
+            if not response.get("choices"):
+                raise AssertionError(f"No generated choices: {response}")
+            message = response["choices"][0]["message"]
+            text = message.get("raw_content") or message.get("content")
+            if not isinstance(text, str) or not text.strip():
+                raise AssertionError(f"Empty generated text: {response}")
+            # This upstream API fills usage with zeros. Measure actual returned
+            # text with the local model tokenizer instead of trusting placeholders.
+            from tokenizers import Tokenizer
+
+            tokenizer = Tokenizer.from_file(str(Path(model) / "tokenizer.json"))
+            generated_tokens = len(tokenizer.encode(text, add_special_tokens=False).ids)
+            if generated_tokens <= 0:
+                raise AssertionError(f"Returned text has no tokens: {response}")
+            result["generated_tokens_local_tokenizer"] = generated_tokens
             request(base + "/chat/completions", {
                 "model": model, "messages": [{"role": "user", "content": ""}],
                 "session_id": "agentkv-reproduction-smoke", "close_session": True, "max_tokens": 1,

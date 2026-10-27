@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SYSTEM = Path(os.environ.get("AGENTKV_SYSTEM_CUDA_HOME", "/usr/local/cuda")).resolve()
 COMPAT = ROOT / ".cache" / "cuda-compat"
 NAMES = r"(?:rsqrtf?|sinpif?|cospif?)"
+RECIPE_VERSION = 2
 
 
 def main():
@@ -38,7 +39,8 @@ def main():
         return
     original = include / "crt" / "math_functions.h"
     fingerprint = hashlib.sha256(original.read_bytes()).hexdigest()
-    if marker.is_file() and json.loads(marker.read_text()).get("source_sha256") == fingerprint:
+    existing = json.loads(marker.read_text()) if marker.is_file() else {}
+    if existing.get("source_sha256") == fingerprint and existing.get("recipe_version") == RECIPE_VERSION:
         print(f"CUDA header overlay ready: {COMPAT}")
         return
     (COMPAT / "include").mkdir(parents=True, exist_ok=True)
@@ -61,7 +63,7 @@ def main():
             r"\1 noexcept (true);", text,
         )
         text, inline_count = re.subn(
-            rf"(__func__\((?:double|float)\s+{NAMES}\((?:double|float)\s+\w+\))\)",
+            rf"(__func__\((?:double|float)\s+{NAMES}\((?:const\s+)?(?:double|float)\s+\w+\))\)",
             r"\1 noexcept (true))", text,
         )
         path.write_text(text)
@@ -78,14 +80,21 @@ def main():
         target = COMPAT / name
         if not target.exists():
             target.symlink_to((SYSTEM / name).resolve(), target_is_directory=True)
-    wrapper = COMPAT / "bin" / "nvcc"
-    # Workspace is accessed through its path without spaces.
-    wrapper.write_text(
-        '#!/usr/bin/env bash\nset -euo pipefail\n'
-        f'exec "{SYSTEM / "bin" / "nvcc"}" -I"{COMPAT / "include"}" "$@"\n'
-    )
-    wrapper.chmod(0o755)
-    marker.write_text(json.dumps({"system_cuda": str(SYSTEM), "source_sha256": fingerprint, "changes": changes}, indent=2) + "\n")
+    # nvcc derives its automatic CUDA include path from its own installation.
+    # Copy the driver so nvcc.profile's TOP is this overlay, including when
+    # FlashInfer also passes -isystem (which can supersede a duplicate -I).
+    shutil.copy2(SYSTEM / "bin" / "nvcc", COMPAT / "bin" / "nvcc")
+    (COMPAT / "targets").mkdir(exist_ok=True)
+    for system_target in (SYSTEM / "targets").iterdir():
+        if not system_target.is_dir():
+            continue
+        local_target = COMPAT / "targets" / system_target.name
+        local_target.mkdir(exist_ok=True)
+        for item in system_target.iterdir():
+            target = local_target / item.name
+            if not target.exists():
+                target.symlink_to(COMPAT / "include" if item.name == "include" else item.resolve(), target_is_directory=item.is_dir())
+    marker.write_text(json.dumps({"system_cuda": str(SYSTEM), "recipe_version": RECIPE_VERSION, "source_sha256": fingerprint, "changes": changes}, indent=2) + "\n")
     print(json.dumps({"overlay": str(COMPAT), "changes": changes}, indent=2))
 
 

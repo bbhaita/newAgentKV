@@ -1,0 +1,174 @@
+{
+  "verified_date": "2026-10-27",
+  "scope": "local_functional_reproduction",
+  "status": "passed",
+  "source": {
+    "source": "https://github.com/LiuTaowen-Tony/agentkv",
+    "commit": "b5280b7c42bd90962712c19f8e0047c89ca40d6d",
+    "submodules": {
+      "engine": {
+        "commit": "254c57bc84e4a7895159ba1062bd46c83626f511",
+        "url": "https://github.com/LiuTaowen-Tony/kv-management-minisgl.git"
+      },
+      "gorilla": {
+        "commit": "c1c222ed87e1cf2ad721e332bdb8ae977ba9cc31",
+        "url": "https://github.com/LiuTaowen-Tony/kv-management-bfcl.git"
+      },
+      "tau2-bench": {
+        "commit": "b761585177de694ad6ac83eff70f1f0cf7af4600",
+        "url": "https://github.com/LiuTaowen-Tony/kv-management-tau2.git"
+      }
+    }
+  },
+  "model": "Qwen/Qwen3-0.6B",
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU",
+  "core_tests": {
+    "tests": 67,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "installation_checks": {
+    "bfcl_cli": {
+      "returncode": 0,
+      "passed": true
+    },
+    "tau2_data": {
+      "returncode": 0,
+      "passed": true
+    },
+    "bfcl_runner": {
+      "returncode": 0,
+      "passed": true
+    },
+    "tau2_runner": {
+      "returncode": 0,
+      "passed": true
+    }
+  },
+  "kernel_check": {
+    "flashinfer_rmsnorm_passed": true,
+    "dtype": "float16",
+    "shape": [
+      4,
+      128
+    ],
+    "max_absolute_error": 0.0
+  },
+  "windows_api_check": {
+    "windows_localhost_reachable": true,
+    "url": "http://127.0.0.1:30000/v1",
+    "model": "/mnt/agentkv-newAgentKV/models/Qwen3-0.6B"
+  },
+  "inference": {
+    "none": {
+      "plan": "none",
+      "model": "/mnt/agentkv-newAgentKV/models/Qwen3-0.6B",
+      "passed": true,
+      "response": {
+        "id": "chatcmpl-0",
+        "object": "chat.completion",
+        "created": 1793103367,
+        "model": "/mnt/agentkv-newAgentKV/models/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "<think>\n\n</think>\n\nThe sky is blue.",
+              "raw_content": "<think>\n\n</think>\n\nThe sky is blue."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0
+        }
+      },
+      "generated_tokens_local_tokenizer": 9,
+      "compaction_events": 0,
+      "committed_compactions": 0,
+      "elapsed_seconds": 246.77
+    },
+    "agentkv-128": {
+      "plan": "agentkv-128",
+      "model": "/mnt/agentkv-newAgentKV/models/Qwen3-0.6B",
+      "passed": true,
+      "response": {
+        "id": "chatcmpl-0",
+        "object": "chat.completion",
+        "created": 1793103633,
+        "model": "/mnt/agentkv-newAgentKV/models/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "<think>\n\n</think>\n\nThe sky is blue.",
+              "raw_content": "<think>\n\n</think>\n\nThe sky is blue."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0
+        }
+      },
+      "generated_tokens_local_tokenizer": 9,
+      "compaction_events": 2,
+      "committed_compactions": 2,
+      "elapsed_seconds": 264.1
+    }
+  },
+  "compactions": [
+    {
+      "status": "committed",
+      "trigger": "after_prefill",
+      "old_physical_cached_len": 432,
+      "new_physical_cached_len": 128,
+      "kept_count": 128,
+      "dropped_count": 304,
+      "compact_backend": "triton_all_layers"
+    },
+    {
+      "status": "committed",
+      "trigger": "before_park",
+      "old_physical_cached_len": 137,
+      "new_physical_cached_len": 128,
+      "kept_count": 128,
+      "dropped_count": 9,
+      "compact_backend": "triton_all_layers"
+    }
+  ],
+  "test_server_port_released": true,
+  "cuda_compatibility": {
+    "system_cuda": "/usr/local/cuda-12.8",
+    "recipe_version": 2,
+    "source_sha256": "2f2189d1752d862e96122f985484c89e16bd03a485a01e1f114514f738a2ed4f",
+    "changes": {
+      "math_functions.h": {
+        "extern": 6,
+        "inline": 6
+      },
+      "math_functions.hpp": {
+        "extern": 0,
+        "inline": 6
+      }
+    }
+  },
+  "original_8b_32b_benchmarks_run": false,
+  "limitations": [
+    "The 6 GiB GPU was validated with Qwen3-0.6B; original 8B/32B benchmark scores were not reproduced.",
+    "The upstream API reports placeholder zero usage. Generated text was measured with the local tokenizer.",
+    "Elapsed time includes model initialization, JIT compilation and teardown; this is not a throughput comparison."
+  ],
+  "core_test_evidence": {
+    "junit_xml": "reproduction-logs/core-tests.xml",
+    "log": "reproduction-logs/core-tests.log",
+    "recorded_timestamp": "2026-10-26T21:06:25.241069+08:00"
+  }
+}

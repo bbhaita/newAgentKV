@@ -1,0 +1,9 @@
+{
+  "flashinfer_rmsnorm_passed": true,
+  "dtype": "float16",
+  "shape": [
+    4,
+    128
+  ],
+  "max_absolute_error": 0.0
+}

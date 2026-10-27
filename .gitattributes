@@ -1,0 +1,2 @@
+# Keep shell entry points runnable after a checkout with Git for Windows.
+*.sh text eol=lf

@@ -16,7 +16,7 @@
 
 ## 本机运行环境
 
-- Windows + 已安装的 Ubuntu WSL2，使用 Linux Python；Windows Anaconda 环境不用于运行此项目。
+- Windows + 已安装的 Ubuntu WSL2，推理和评测使用 WSL 中的 Python。
 - NVIDIA RTX 3060 Laptop，6GB 显存，计算能力 8.6。
 - WSL 内 CUDA Toolkit 12.8、Python 3.12.15，独立环境 `.venv-linux/`。
 - CUDA 编译使用现有 GCC/G++ 14，避免默认 GCC 15 与 CUDA 12.8 不兼容。
@@ -24,7 +24,30 @@
 
 当前 Windows 路径含空格，FlashInfer 0.5.3 的 Ninja 生成器不能直接处理该路径。`scripts/repro/wsl.ps1` 在 WSL 中创建 `/mnt/agentkv-newAgentKV` 的临时 bind mount，并通过该无空格路径运行。代码、环境和缓存仍是当前文件夹中的同一份文件，没有搬移。WSL 重启后，该入口会重新建立映射。它以 WSL root 仅执行挂载准备，安装和推理仍使用普通用户。
 
+本机 Ubuntu 26.04 的 glibc 2.43 与 CUDA 12.8 的数学函数异常声明存在兼容冲突。安装脚本会在 `.cache/cuda-compat/` 创建局部头文件及 nvcc 驱动副本，为冲突函数补齐 `noexcept`；系统 CUDA 文件不受修改。此处理参考 [NVIDIA 开发者论坛中的问题与修复记录](https://forums.developer.nvidia.com/t/error-exception-specification-is-incompatible-for-cospi-sinpi-cospif-sinpif-with-glibc-2-41/323591)。可单独执行以下命令，使用 FlashInfer 相同的 include 选项，实际编译 CUDA C++17/C++20 内核来验证兼容层：
+
+```powershell
+.\scripts\repro\wsl.ps1 prepare_cuda.sh
+```
+
 上游实验入口默认只注册 Qwen3-8B 和 Qwen3-32B。仅 FP16/BF16 权重就约需 16GB/64GB，另需 KV 缓存和运行空间，因此本机采用 Qwen3-0.6B 做运行验证。小模型验证不等于复现原始模型的 BFCL/tau2 分数或吞吐量。
+
+## 已完成的本机验证（2026-10-27）
+
+完整记录见 [reproduction-report.json](reproduction-report.json)。
+
+| 检查 | 结果 |
+| --- | --- |
+| 上游引擎核心测试 | 67 项通过，含 GPU Triton KV 压缩测试 |
+| BFCL / tau2 | 命令入口、实验 runner 参数入口、tau2 数据检查通过 |
+| CUDA / FlashInfer | C++17/C++20 编译通过；RMSNorm GPU 小样本与 PyTorch 参考结果一致 |
+| Windows 本地访问 | `http://127.0.0.1:30000/v1/models` 访问通过 |
+| 无压缩基线 | 真实 Qwen3-0.6B 生成通过，返回 `The sky is blue.`，本地分词统计为 9 个输出 token |
+| AgentKV-128 | 返回相同答案，记录到 2 次已提交的 Triton KV 压缩 |
+
+AgentKV 首次压缩把该请求的物理 KV 缓存长度从 **432 token 降到 128 token**；结束前再次从 137 降到 128。原始记录保存在 `reproduction-logs/agentkv-128/compact/compact_events.jsonl`。这些是功能验证数据，固定 KV 内存池、首次 JIT 编译和初始化时间均不能据此换算为显存节省或吞吐量提升。
+
+成功的两次推理结果分别位于 `reproduction-logs/baseline-none-final/result.json` 和 `reproduction-logs/agentkv-128/result.json`。验证脚本完成后会自动停止测试服务；需要使用接口时执行下文的常驻启动命令。首次加载依赖、权重与编译内核可能需要数分钟。
 
 ## 安装与验证
 
@@ -34,6 +57,7 @@
 .\scripts\repro\wsl.ps1 setup.sh --benchmarks
 .\scripts\repro\wsl.ps1 test_core.sh
 .\scripts\repro\wsl.ps1 check_install.sh
+.\scripts\repro\wsl.ps1 check_kernels.sh
 ```
 
 通过上述 PowerShell 入口建立映射后，也可以在 Ubuntu 终端中执行：
@@ -68,7 +92,7 @@ bash scripts/repro/smoke_test.sh --plan none
 bash scripts/repro/smoke_test.sh --plan agentkv-128
 ```
 
-脚本使用本地模型、单并发、2048 上下文，检查生成 token；AgentKV 验证还要求日志出现已提交的 KV 压缩事件。服务在验证后自动退出，结果保存在带时间戳的 `reproduction-logs/smoke-*/`。也可用 `--output-dir` 指定新的结果目录。
+脚本使用本地模型、单并发、2048 上下文，用本地 tokenizer 检查实际返回文本的 token；AgentKV 验证还要求日志出现已提交的 KV 压缩事件。当前上游 API 的 `usage` 字段固定填零，因此它不能用于判断是否生成或计算吞吐量。服务在验证后自动退出，结果保存在带时间戳的 `reproduction-logs/smoke-*/`。也可用 `--output-dir` 指定新的结果目录。
 
 常驻启动：
 
